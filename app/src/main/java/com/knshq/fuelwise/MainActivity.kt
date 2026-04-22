@@ -17,21 +17,29 @@ import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.FusedLocationProviderClient
 
 class MainActivity : ComponentActivity() {
-    private lateinit var fusedLocationClient: com.google.android.gms.location.FusedLocationProviderClient
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var latitude by mutableStateOf("Fetching...")
+    private var longitude by mutableStateOf("Fetching...")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        fusedLocationClient = com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(this)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         requestLocationPermission()
         enableEdgeToEdge()
         setContent {
             FuelWiseTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                    LocationScreen(
+                        latitude = latitude,
+                        longitude = longitude,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -63,10 +71,12 @@ class MainActivity : ComponentActivity() {
 
         fusedLocationClient.requestLocationUpdates(
             request,
-            object : com.google.android.gms.location.LocationCallback() {
-                override fun onLocationResult(result: com.google.android.gms.location.LocationResult) {
-                    val location = result.lastLocation
+            object : LocationCallback() {
+                override fun onLocationResult(locationResult: LocationResult) {
+                    val location = locationResult.lastLocation
                     if (location != null) {
+                        latitude = location.latitude.toString()
+                        longitude = location.longitude.toString()
                         android.util.Log.d(
                             "FuelWise",
                             "Latitude: ${location.latitude}, Longitude: ${location.longitude}"
@@ -88,17 +98,24 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
+fun LocationScreen(
+    latitude: String,
+    longitude: String,
+    modifier: Modifier = Modifier
+) {
     Text(
-        text = "Hello $name!",
+        text = "Lat: $latitude\nLon: $longitude",
         modifier = modifier
     )
 }
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun LocationPreview() {
     FuelWiseTheme {
-        Greeting("Android")
+        LocationScreen(
+            latitude = "-37.8136",
+            longitude = "144.9631"
+        )
     }
 }
